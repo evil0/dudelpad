@@ -18,14 +18,30 @@
 		<title>dudlePad - evil0.github.com</title>
 		<script type="text/javascript" src="scripts/jquery.min.js"></script>
 		<script src="http://<?php echo $_SERVER['HTTP_HOST'] ?>:3000/socket.io/socket.io.js"></script> 
-
+<link rel="stylesheet" type="text/css" href="css/mobile.css">
 		<script type="text/javascript" src="scripts/shake.js"></script>
+		<script type="text/javascript" src="scripts/paper.js"></script>
     	<script type="text/javascript">   
-
+    	 $(document).ready( function(){ 
+			 //Get the canvas & context 
+			 var c = $('#pad'); 
+			 var ct = c.get(0).getContext('2d'); 
+			 var container = $(c).parent(); 
+			 //Run function when browser resizes
+$(window).resize( respondCanvas ); 
+			 function respondCanvas(){
+				  c.attr('width', $(container).width() ); 
+				  //max width 
+				  c.attr('height', $(container).height() ); 
+				  //max height 
+				  //Call a function to redraw other content (texts, images etc) 
+				  } //Initial call 
+				  respondCanvas(); 
+				  });
 		// connection
 		var socket 	= io.connect('<?php echo $_SERVER['HTTP_HOST'] ?>:3000');
 
-		
+		/** TODO: use of paper.js as already done in index.php **/
 		var dudleDraw = function(options) {
 			var color = '0, 0, 0';
 			
@@ -68,6 +84,7 @@
 
 				// identify every finger for multi-touch support
 		        preDraw: function(event) {
+		        	socket.emit('mouseDown');
 					
 					$.each(event.touches, function(i, touch) {
 						var id      = touch.identifier;	
@@ -115,12 +132,21 @@
 					ctxt.stroke();
 		            ctxt.closePath();
 
-		            // streaming infos
-					socket.emit('clientDraw', color, lines[i].x, lines[i].y,points.x,points.y,ctxt.lineWidth,canvas.width, canvas.height);
-			
+		            var dX              =   lines[i].x - points.x; // distanza orizzontale punto-punto tra il cursore e il centro del logo
+		            var dY              =   lines[i].y - points.y; // distanza verticale
+		            var distance        =   Math.sqrt(Math.pow(dX, 2) + Math.pow(dY, 2)); // ipotenusa
+
+					/* delta control */ 
+		            if(distance>0) {
+		            	// streaming infos
+						socket.emit('clientDraw', color, lines[i].x, lines[i].y,points.x,points.y,ctxt.lineWidth,canvas.width, canvas.height);
+		            }
 		            return { x: lines[i].x + changeX, y: lines[i].y + changeY };
 				
 				
+				},
+				ends: function() {
+					socket.emit('mouseUp');
 				}
 		    };
 		
@@ -138,8 +164,7 @@
 	<body>
 	
 		<div id="content">
-			<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		
+	
 		   	<canvas id="pad" ></canvas> 
 		  
 			<br/>

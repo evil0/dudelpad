@@ -56,4 +56,14 @@ io.sockets.on('connection', function (socket) {
 		socket.broadcast.emit('clear');
 	});
 	
+	socket.on('mouseUp', function () {
+		socket.broadcast.emit('mouseUp');
+		//io.sockets.clients[id].emit for private talking
+	});
+	
+	socket.on('mouseDown', function () {
+		socket.broadcast.emit('mouseDown');
+		//io.sockets.clients[id].emit for private talking
+	});
+	
 });

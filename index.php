@@ -21,41 +21,68 @@
 		<link rel="stylesheet" type="text/css" href="css/style.css">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<script type="text/javascript" src="scripts/jquery.min.js"></script>
-
-		<script src="http://<?php echo $_SERVER['HTTP_HOST'] ?>:3000/socket.io/socket.io.js"></script> 
+		<script type="text/javascript" src="scripts/paper.js"></script>
 		    
+		<script src="http://<?php echo $_SERVER['HTTP_HOST'] ?>:3000/socket.io/socket.io.js"></script> 
+		    	
 		<script type="text/javascript">          
 		
+			var path; // path global var
+			
 			var socket 	= io.connect('<?php echo $_SERVER['HTTP_HOST'] ?>:3000');
 			
-				socket.on('connect', function () {
-						socket.emit('savemyid', '<?php echo $_SERVER['REMOTE_ADDR'] ?>');
-				});
-			           
+			socket.on('connect', function () {
+				socket.emit('savemyid', '<?php echo $_SERVER['REMOTE_ADDR'] ?>');
+			});
+				 
 			var dudleDraw = function(options) {
 			
 			    var canvas = document.getElementById(options.id),
 			        ctxt = canvas.getContext("2d");
-			
-			    ctxt.lineWidth = options.size || Math.ceil(Math.random() * 35);
-			    ctxt.lineCap = options.lineCap || "round";
-			
+			   
+			    paper.setup(canvas);
+			    path = new paper.Path();  
+
+
+			    /* Clear the canvas - received on device shaking
+			     */
+			    
 			 	socket.on('clear', function () {
 					canvas.width = canvas.width;
 				});
-			 
-			    socket.on('serverDraw', function (color,startX, startY,changeX,changeY, size,w,h) { // trasforma ste var in un array "params"
-			
-						ctxt.lineWidth = size;
-			
-						ctxt.strokeStyle = "rgba("+color+", 0.8)";
-			            ctxt.beginPath();
-						ctxt.moveTo(startX*(canvas.width/w), startY*(canvas.height/h));
-						
-						ctxt.lineTo(changeX*(canvas.width/w),changeY*(canvas.height/h));
-						
-			            ctxt.stroke();
-			            ctxt.closePath();
+
+			    /* On mouseDown signal closes the previous path
+			     * and starts a new one
+			     */
+			    
+			    socket.on('mouseDown', function () {
+				    path = new paper.Path();
+			    });	
+
+			    /* On mouseUp signal redraw a smoothed 
+			     * and simplified path (TODO: optimization)
+			     */
+			    
+			    socket.on('mouseUp', function() {
+			    	path.simplify(5);
+					paper.view.draw();
+			    });		
+			    	 
+			    /* On serverDraw signal draw a point to point path
+			     * using given parameters (TODO: customization)
+			     */
+			    
+			    socket.on('serverDraw', function (color,startX, startY,changeX,changeY, size,w,h) { // TODO: params array
+
+				    path.strokeColor = 'black';
+				    path.strokeStyle = "rgba("+color+", 0.8)";
+				    path.strokeWidth = size;
+				    
+					path.moveTo(startX*(canvas.width/w), startY*(canvas.height/h));
+					path.lineTo(changeX*(canvas.width/w),changeY*(canvas.height/h));
+
+					paper.view.draw();
+				
 				});
 			
 			
@@ -75,7 +102,7 @@
 		<br/>
 		<b>Code by</b> Marco Costantino - <a href="http://evil0.github.com">http://evil0.github.com</a>
 		<br/><i>Start drawing on your touch device here: http://<?php echo $_SERVER['HTTP_HOST']."/draw.php" ?> </i>
-		Viewers: <span id="wievers"></span>
+		Viewers: <span id="wievers"><!--  TODO: Mark the viewers (count them and show ips) --></span>
 		
 		</div>
 	</body>
