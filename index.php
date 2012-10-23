@@ -42,7 +42,7 @@
 			   
 			    paper.setup(canvas);
 			    path = new paper.Path();  
-
+		
 
 			    /* Clear the canvas - received on device shaking
 			     */
@@ -75,12 +75,11 @@
 			    socket.on('serverDraw', function (color,startX, startY,changeX,changeY, size,w,h) { // TODO: params array
 
 				    path.strokeColor = 'black';
-				    path.strokeStyle = "rgba("+color+", 0.8)";
 				    path.strokeWidth = size;
 				    
 					path.moveTo(startX*(canvas.width/w), startY*(canvas.height/h));
 					path.lineTo(changeX*(canvas.width/w),changeY*(canvas.height/h));
-
+			
 					paper.view.draw();
 				
 				});
